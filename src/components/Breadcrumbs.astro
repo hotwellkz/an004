@@ -1,0 +1,99 @@
+---
+const { currentPage } = Astro.props;
+
+const pages = [
+  { name: 'Главная', path: '/', showInBreadcrumbs: true },
+  { name: 'Программа', path: '/program', showInBreadcrumbs: true },
+  { name: 'Вход', path: '/login', showInBreadcrumbs: true },
+  { name: 'Регистрация', path: '/register', showInBreadcrumbs: true },
+  { name: 'Урок 1.1', path: '/lessons/1.1', showInBreadcrumbs: true },
+  { name: 'Урок 2.1', path: '/lessons/2.1', showInBreadcrumbs: true }
+];
+
+const currentPath = new URL(Astro.request.url).pathname;
+const breadcrumbs = [];
+
+// Всегда добавляем "Главная"
+breadcrumbs.push(pages[0]);
+
+// Для страниц уроков добавляем "Программа" как промежуточный пункт
+if (currentPath.startsWith('/lessons/')) {
+  breadcrumbs.push(pages.find(page => page.path === '/program')!);
+}
+
+// Добавляем текущую страницу
+const currentPageData = pages.find(page => page.path === currentPath);
+if (currentPageData) {
+  breadcrumbs.push(currentPageData);
+} else if (currentPath.startsWith('/lessons/')) {
+  // Если это страница урока, которой нет в списке, создаем для нее пункт
+  const lessonNumber = currentPath.split('/').pop();
+  breadcrumbs.push({
+    name: `Урок ${lessonNumber}`,
+    path: currentPath,
+    showInBreadcrumbs: true
+  });
+}
+
+// Фильтруем только те страницы, которые должны показываться
+const visibleBreadcrumbs = breadcrumbs.filter(crumb => crumb.showInBreadcrumbs);
+---
+
+<nav class="breadcrumbs">
+  <div class="container">
+    {visibleBreadcrumbs.map((crumb, index) => (
+      <>
+        <a href={crumb.path} class={currentPath === crumb.path ? 'active' : ''}>
+          {crumb.name}
+        </a>
+        {index < visibleBreadcrumbs.length - 1 && <span class="separator">/</span>}
+      </>
+    ))}
+  </div>
+</nav>
+
+<style>
+  .breadcrumbs {
+    background: rgba(26, 26, 26, 0.95);
+    padding: 0.75rem 0;
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    z-index: 900;
+    backdrop-filter: blur(10px);
+  }
+
+  .container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  a {
+    color: #a1a1aa;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s ease;
+  }
+
+  a:hover {
+    color: white;
+  }
+
+  a.active {
+    color: rgb(var(--accent-light));
+    pointer-events: none;
+  }
+
+  .separator {
+    color: #a1a1aa;
+    margin: 0 0.25rem;
+  }
+
+  @media (max-width: 768px) {
+    .breadcrumbs {
+      top: 60px;
+    }
+  }
+</style>
